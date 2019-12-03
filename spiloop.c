@@ -9,6 +9,15 @@ struct miscdevice fake_controller = {
 
 static struct spi_controller *conn;
 
+
+static int virtual_spi_one_transfer(struct spi_master *master,
+					struct spi_device *spi,
+					struct spi_transfer *xfer)
+{
+	spi_finalize_current_transfer(conn);
+	return 0;
+}
+
 static int __init controller_init(void) {
 	int status;
 	status = misc_register(&fake_controller);
@@ -20,6 +29,9 @@ static int __init controller_init(void) {
 		status = -1;
 		goto out_free;
 	}
+	conn->bus_num = 0;
+	conn->num_chipselect = 1;
+	conn->transfer_one = virtual_spi_one_transfer;
 	status = spi_register_controller(conn);
 	if (status) {
 		goto out_free;
